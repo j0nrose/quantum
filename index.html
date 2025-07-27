@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IBM Quantum Qiskit Circuit Builder</title>
+    <style>
+        /* CSS Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="60" cy="30" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .panel:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .panel h2 {
+            color: #2a5298;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel h2::before {
+            content: '⚛️';
+            font-size: 1.2em;
+        }
+
+        .controls {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        input, select, button {
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .gate-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+        }
+
+        .gate-btn {
+            padding: 8px 12px;
+            font-size: 12px;
+            background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+        }
+
+        .circuit-display {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .circuit-display::before {
+            content: 'Quantum Circuit';
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        .results-display {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            border-left: 4px solid #28a745;
+        }
+
+        .quantum-viz {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .qubit {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+            transition: transform 0.3s ease;
+        }
+
+        .qubit:hover {
+            transform: scale(1.05);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2a5298;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .panel {
+                padding: 20px;
+            }
+
+            .gate-buttons {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>IBM Quantum Qiskit</h1>
+            <p>Build and simulate quantum circuits in your browser</p>
+        </div>
+
+        <div class="main-content">
+            <div class="panel">
+                <h2>Circuit Builder</h2>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="qubits">Number of Qubits:</label>
+                        <input type="number" id="qubits" min="1" max="10" value="3">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="shots">Shots (Simulations):</label>
+                        <input type="number" id="shots" min="1" max="10000" value="1024">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>Quantum Gates:</label>
+                        <div class="gate-buttons">
+                            <button class="gate-btn" onclick="addGate('H')">H</button>
+                            <button class="gate-btn" onclick="addGate('X')">X</button>
+                            <button class="gate-btn" onclick="addGate('Y')">Y</button>
+                            <button class="gate-btn" onclick="addGate('Z')">Z</button>
+                            <button class="gate-btn" onclick="addGate('CNOT')">CNOT</button>
+                            <button class="gate-btn" onclick="addGate('RX')">RX</button>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="target-qubit">Target Qubit:</label>
+                        <select id="target-qubit">
+                            <option value="0">Qubit 0</option>
+                            <option value="1">Qubit 1</option>
+                            <option value="2">Qubit 2</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="runSimulation()">Run Quantum Simulation</button>
+                <button onclick="clearCircuit()" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);">Clear Circuit</button>
+
+                <div class="circuit-display" id="circuit-display">
+                    No gates added yet. Click on gate buttons to build your circuit.
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Simulation Results</h2>
+                
+                <div class="results-display" id="results-display">
+                    Run a simulation to see results...
+                </div>
+
+                <div class="quantum-viz" id="quantum-viz">
+                    <!-- Qubit visualization will be populated by JavaScript -->
+                </div>
+
+                <div class="stats" id="stats">
+                    <!-- Statistics will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript Implementation
+        class QuantumCircuit {
+            constructor(numQubits) {
+                this.numQubits = numQubits;
+                this.gates = [];
+                this.measurements = {};
+            }
+
+            addGate(gate, qubit, parameter = null) {
+                this.gates.push({
+                    type: gate,
+                    qubit: qubit,
+                    parameter: parameter,
+                    timestamp: Date.now()
+                });
+            }
+
+            clear() {
+                this.gates = [];
+                this.measurements = {};
+            }
+
+            simulate(shots = 1024) {
+                // Simplified quantum simulation
+                const results = {};
+                
+                for (let shot = 0; shot < shots; shot++) {
+                    let state = new Array(this.numQubits).fill(0);
+            
+                    // Apply gates sequentially
+                    for (let gate of this.gates) {
+                        state = this.applyGate(state, gate);
+                    }
+            
+                    // Measure final state
+                    const measurement = this.measure(state);
+                    const binaryString = measurement.join('');
+                    results[binaryString] = (results[binaryString] || 0) + 1;
+                }
+        
+                this.measurements = results;
+                return results;
+            }
+
+            applyGate(state, gate) {
+                const newState = [...state];
+                const qubit = gate.qubit;
+        
+                switch (gate.type) {
+                    case 'H': // Hadamard - creates superposition
+                        newState[qubit] = Math.random() > 0.5 ? 1 : 0;
+                        break;
+                    case 'X': // Pauli-X (NOT gate)
+                        newState[qubit] = 1 - newState[qubit];
+                        break;
+                    case 'Y': // Pauli-Y
+                        newState[qubit] = Math.random() > 0.5 ? 1 : 0;
+                        break;
+                    case 'Z': // Pauli-Z
+                        // Z gate affects phase, simplified for measurement
+                        break;
+                    case 'CNOT': // Controlled-NOT
+                        if (qubit < this.numQubits - 1) {
+                            if (newState[qubit] === 1) {
+                                newState[qubit + 1] = 1 - newState[qubit + 1];
+                            }
+                        }
+                        break;
+                    case 'RX': // Rotation X
+                        newState[qubit] = Math.random() > 0.7 ? 1 : 0;
+                        break;
+                }
+        
+                return newState;
+            }
+
+            measure(state) {
+                // Add quantum randomness to measurements
+                return state.map(qubit => {
+                    if (qubit === 0) return Math.random() > 0.95 ? 1 : 0;
+                    if (qubit === 1) return Math.random() > 0.95 ? 0 : 1;
+                    return qubit;
+                });
+            }
+
+            getCircuitString() {
+                if (this.gates.length === 0) {
+                    return "No gates added yet. Click on gate buttons to build your circuit.";
+                }
+
+                let circuit = `Quantum Circuit (${this.numQubits} qubits):\n\n`;
+                
+                for (let i = 0; i < this.numQubits; i++) {
+                    circuit += `q${i}: |0⟩ `;
+                    
+                    for (let gate of this.gates) {
+                        if (gate.qubit === i) {
+                            circuit += `─[${gate.type}]─ `;
+                        } else if (gate.type === 'CNOT' && gate.qubit === i - 1) {
+                            circuit += `─[●]─ `;
+                        } else if (gate.type === 'CNOT' && gate.qubit + 1 === i) {
+                            circuit += `─[⊕]─ `;
+                        } else {
+                            circuit += `─────── `;
+                        }
+                    }
+                    circuit += '\n';
+                }
+
+                circuit += `\nTotal gates: ${this.gates.length}`;
+                return circuit;
+            }
+        }
+
+        // Global variables
+        let circuit = new QuantumCircuit(3);
+        let isSimulating = false;
+
+        // Update qubit selector when number of qubits changes
+        document.getElementById('qubits').addEventListener('input', function() {
+            const numQubits = parseInt(this.value);
+            circuit = new QuantumCircuit(numQubits);
+            updateQubitSelector(numQubits);
+            updateDisplay();
+        });
+
+        function updateQubitSelector(numQubits) {
+            const selector = document.getElementById('target-qubit');
+            selector.innerHTML = '';
+            
+            for (let i = 0; i < numQubits; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Qubit ${i}`;
+                selector.appendChild(option);
+            }
+        }
+
+        function addGate(gateType) {
+            const targetQubit = parseInt(document.getElementById('target-qubit').value);
+            
+            if (targetQubit >= circuit.numQubits) {
+                showMessage('Invalid qubit selection!', 'error');
+                return;
+            }
+
+            circuit.addGate(gateType, targetQubit);
+            updateDisplay();
+            showMessage(`Added ${gateType} gate to qubit ${targetQubit}`, 'success');
+        }
+
+        function clearCircuit() {
+            circuit.clear();
+            updateDisplay();
+            document.getElementById('results-display').textContent = 'Run a simulation to see results...';
+            document.getElementById('quantum-viz').innerHTML = '';
+            document.getElementById('stats').innerHTML = '';
+            showMessage('Circuit cleared!', 'success');
+        }
+
+        async function runSimulation() {
+            if (isSimulating) return;
+            
+            isSimulating = true;
+            const button = event.target;
+            const originalText = button.textContent;
+            button.innerHTML = '<span class="loading"></span> Simulating...';
+            button.disabled = true;
+
+            try {
+                const shots = parseInt(document.getElementById('shots').value);
+                
+                // Simulate delay for realism
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                const results = circuit.simulate(shots);
+                displayResults(results, shots);
+                showMessage('Simulation completed successfully!', 'success');
+                
+            } catch (error) {
+                showMessage('Simulation failed: ' + error.message, 'error');
+            } finally {
+                button.textContent = originalText;
+                button.disabled = false;
+                isSimulating = false;
+            }
+        }
+
+        function displayResults(results, shots) {
+            const resultsDiv = document.getElementById('results-display');
+            const vizDiv = document.getElementById('quantum-viz');
+            const statsDiv = document.getElementById('stats');
+
+            // Format results
+            let resultText = `Quantum Measurement Results (${shots} shots):\n\n`;
+            const sortedResults = Object.entries(results).sort((a, b) => b[1] - a[1]);
+            
+            for (let [state, count] of sortedResults) {
+                const probability = (count / shots * 100).toFixed(1);
+                resultText += `|${state}⟩: ${count} times (${probability}%)\n`;
+            }
+
+            resultsDiv.textContent = resultText;
+
+            // Update qubit visualization
+            vizDiv.innerHTML = '';
+            for (let i = 0; i < circuit.numQubits; i++) {
+                const qubitDiv = document.createElement('div');
+                qubitDiv.className = 'qubit';
+                
+                // Calculate probability of qubit being |1⟩
+                let prob1 = 0;
+                for (let [state, count] of Object.entries(results)) {
+                    if (state[i] === '1') {
+                        prob1 += count;
+                    }
+                }
+                const probability = (prob1 / shots * 100).toFixed(1);
+                
+                qubitDiv.innerHTML = `
+                    <div>Q${i}</div>
+                    <div style="font-size: 0.8em; margin-top: 5px;">
+                        |1⟩: ${probability}%
+                    </div>
+                `;
+                vizDiv.appendChild(qubitDiv);
+            }
+
+            // Update statistics
+            statsDiv.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${Object.keys(results).length}</div>
+                    <div class="stat-label">Unique States</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${circuit.gates.length}</div>
+                    <div class="stat-label">Total Gates</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${shots}</div>
+                    <div class="stat-label">Shots</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${circuit.numQubits}</div>
+                    <div class="stat-label">Qubits</div>
+                </div>
+            `;
+        }
+
+        function updateDisplay() {
+            document.getElementById('circuit-display').textContent = circuit.getCircuitString();
+        }
+
+        function showMessage(message, type) {
+            // Remove existing messages
+            const existingMessages = document.querySelectorAll('.error, .success');
+            existingMessages.forEach(msg => msg.remove());
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type;
+            messageDiv.textContent = message;
+            
+            const container = document.querySelector('.panel');
+            container.appendChild(messageDiv);
+
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 3000);
+        }
+
+        // Initialize display
+        updateDisplay();
+        updateQubitSelector(3);
+
+        // Add some example animations on load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                showMessage('Welcome to IBM Quantum Qiskit Simulator!', 'success');
+            }, 500);
+        });
+    </script>
+</body>
+</html>
